@@ -1,12 +1,55 @@
 package org.jetbrains.kotlin.grammargenerator.generators
 
+import org.antlr.v4.parse.ANTLRParser
+import org.antlr.v4.tool.Rule
+import org.antlr.v4.tool.ast.GrammarAST
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 
-class TextGenerator : Generator {
+class TextGenerator(private val lexerRules: Map<String, Rule>? = null) : Generator {
+    override val usedLexerRules = mutableSetOf<String>()
     companion object {
+        private val supportedNodes = setOf(
+                ANTLRParser.TOKEN_REF,
+                ANTLRParser.LEXER_CHAR_SET,
+                ANTLRParser.RULE_REF,
+                ANTLRParser.BLOCK,
+                ANTLRParser.ALT,
+                ANTLRParser.SET,
+                ANTLRParser.RULE,
+                ANTLRParser.STRING_LITERAL,
+                ANTLRParser.RULEMODIFIERS,
+                ANTLRParser.POSITIVE_CLOSURE,
+                ANTLRParser.CLOSURE,
+                ANTLRParser.OPTIONAL
+        )
+
         const val LENGTH_FOR_RULE_SPLIT = 120
         val ls = System.lineSeparator()
+        val stopTerminals = setOf("NL")
+
+        fun isSimpleLexerRule(rule: GrammarAST): Boolean {
+//            if (rule.children != null && rule.childrenAsArray.count { println(it.altLabel); println(it.type);it.type != 1 } > 1)
+                if (rule.children != null && rule.childrenAsArray.count { supportedNodes.contains(it.type) } > 1)
+                return false
+
+            if (rule.children == null || rule.children.size == 0)
+                return true
+
+            return isSimpleLexerRule(rule.childrenAsArray[0])
+        }
+    }
+
+    fun getLexerRule(node: TerminalAST): String? {
+        if (stopTerminals.contains(node.token.text) || lexerRules == null)
+            return null
+
+        val rule = lexerRules[node.token.text]
+
+        if (rule == null || !isSimpleLexerRule(rule.ast.childrenAsArray[1]))
+            return null
+
+        return rule.tokenRefs.single().also { usedLexerRules.add(rule.name) }
     }
 
     private fun addGreedyMarker(isGreedy: Boolean) = if (isGreedy) "" else "?"
@@ -55,19 +98,16 @@ class TextGenerator : Generator {
     override fun root() = ""
     override fun pred() = ""
 
-    override fun ruleRef(node: RuleRefAST): Any {
-        return node.text
-    }
+    override fun ruleRef(node: RuleRefAST) = node.text
 
-    override fun terminal(node: TerminalAST): Any {
-        return node.text
-    }
+    override fun terminal(node: TerminalAST) = getLexerRule(node) ?: node.text
 
     override fun run(rules: List<Any>, fragments: List<Any>): String {
-        val rulesGenerated = rules.joinToString("") { it as String }
         val fragmentsGenerated =
                 if (fragments.isNotEmpty()) "[helper] " + fragments.joinToString("[helper] ") { it as String } else ""
 
-        return rulesGenerated + fragmentsGenerated
+        return run(rules) + fragmentsGenerated
     }
+
+    override fun run(rules: List<Any>) = rules.joinToString("") { it as String }
 }

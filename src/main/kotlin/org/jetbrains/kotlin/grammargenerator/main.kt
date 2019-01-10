@@ -1,39 +1,45 @@
 package org.jetbrains.kotlin.grammargenerator
 
-import org.antlr.v4.tool.Grammar
 import java.io.File
 import com.xenomachina.argparser.ArgParser
+import org.antlr.v4.tool.Grammar
 import org.antlr.v4.tool.LexerGrammar
 import org.jetbrains.kotlin.grammargenerator.generators.TextGenerator
 import org.jetbrains.kotlin.grammargenerator.generators.XmlGenerator
 import org.jetbrains.kotlin.grammargenerator.visitors.GrammarVisitor
 
 enum class ConvertType { TEXT, XML }
-enum class GrammarType { PARER, LEXER }
 
 fun main(args: Array<String>) {
     val parser = ArgParser(args)
-    val grammarFile by parser.storing("-f", "--file", help="path to ANTLR 4 grammar file (.g4)")
+    val lexerGrammarFile by parser.storing("-l", "--lexerFile", help="path to ANTLR 4 lexer grammar file (.g4)")
+    val parserGrammarFile by parser.storing("-p", "--parserFile", help="path to ANTLR 4 parser grammar file (.g4)")
     val outputFile by parser.storing("-o", "--output", help="path to converted file")
     val convertType by parser.mapping("--text" to ConvertType.TEXT, "--xml" to ConvertType.XML, help = "convert type (--text or --xml)")
-    val grammarType by parser.mapping("--parser" to GrammarType.PARER, "--lexer" to GrammarType.LEXER, help = "grammar type (--parser or --lexer)")
 
-    val grammarText = File(grammarFile).readText()
-    val grammar = when (grammarType) {
-        GrammarType.PARER -> Grammar(grammarText)
-        GrammarType.LEXER -> LexerGrammar(grammarText)
-    }
+    val lexerGrammar = LexerGrammar(File(lexerGrammarFile).readText())
+    val parserGrammar = Grammar(File(parserGrammarFile).readText())
 
-    val rules = grammar.rules.filter { it.value.mode != "Inside" && !it.value.isFragment }.values
-    val fragments = grammar.rules.filter { it.value.mode != "Inside" && it.value.isFragment }.values
+    val parserRules = parserGrammar.rules.values
+    val lexerRules = lexerGrammar.rules.filter { !it.value.isFragment }.values
 
-    val generator = when (convertType) {
+    val lexerHelpers = lexerGrammar.rules.filter { it.value.isFragment }.values
+
+    val lexerGenerator = when (convertType) {
         ConvertType.TEXT -> TextGenerator()
         ConvertType.XML -> XmlGenerator()
     }
-    val visitor = GrammarVisitor(generator)
+    val parserGenerator = when (convertType) {
+        ConvertType.TEXT -> TextGenerator(lexerGrammar.rules.filter { !it.value.isFragment })
+        ConvertType.XML -> XmlGenerator(lexerGrammar.rules.filter { !it.value.isFragment })
+    }
+    val lexerVisitor = GrammarVisitor(lexerGenerator)
+    val parserVisitor = GrammarVisitor(parserGenerator)
 
-    val result = generator.run(rules.map { it.ast.visit(visitor) }, fragments.map { it.ast.visit(visitor) })
+    val parserResult = parserGenerator.run(parserRules.map { it.ast.visit(parserVisitor) })
+    val lexerResult = lexerGenerator.run(lexerRules.filter {
+        !parserGenerator.usedLexerRules.contains(it.name) && it.mode != "Inside" && !it.name.startsWith("UNICODE_CLASS")
+    }.map {it.ast.visit(lexerVisitor) }, lexerHelpers.map { it.ast.visit(lexerVisitor) })
 
-    File(outputFile).writeText(result)
+    File(outputFile).writeText(parserResult + lexerResult)
 }

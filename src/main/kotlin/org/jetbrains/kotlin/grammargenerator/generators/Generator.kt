@@ -17,5 +17,7 @@ interface Generator {
     fun pred(): Any
     fun ruleRef(node: RuleRefAST): Any
     fun terminal(node: TerminalAST): Any
+    fun run(rules: List<Any>): String
     fun run(rules: List<Any>, fragments: List<Any>): String
+    val usedLexerRules: Set<String>
 }

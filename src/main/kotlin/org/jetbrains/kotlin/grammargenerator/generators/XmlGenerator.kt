@@ -1,9 +1,11 @@
 package org.jetbrains.kotlin.grammargenerator.generators
 
+import org.antlr.v4.tool.Rule
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 
-class XmlGenerator : Generator {
+class XmlGenerator(private val lexerRules: Map<String, Rule>? = null) : Generator {
+    override val usedLexerRules = mutableSetOf<String>()
     private fun addGreedyMarker(isGreedy: Boolean): Nothing = TODO()
     private fun joinThroughLength(nodes: List<Any>): Nothing = TODO()
     private fun groupUsingPipe(nodes: List<Any>, leftSeparator: String = " "): Nothing = TODO()
@@ -23,4 +25,5 @@ class XmlGenerator : Generator {
     override fun terminal(node: TerminalAST): Nothing = TODO()
 
     override fun run(rules: List<Any>, fragments: List<Any>): Nothing = TODO()
+    override fun run(rules: List<Any>): Nothing = TODO()
 }
