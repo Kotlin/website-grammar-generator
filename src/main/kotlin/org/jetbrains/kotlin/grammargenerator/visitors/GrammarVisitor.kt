@@ -1,32 +1,11 @@
 package org.jetbrains.kotlin.grammargenerator.visitors
 
+import org.antlr.v4.parse.ANTLRParser
 import org.antlr.v4.tool.ast.*
 import org.jetbrains.kotlin.grammargenerator.generators.Generator
 
-enum class NodeType(val tokenId: Int) {
-    TOKEN(66),
-    SEQUENCE(32),
-    PRODUCTION(57),
-    BLOCK(78),
-    ALT(74),
-    SET(98),
-    RULE(94),
-    LITERAL(62),
-    RULE_MODIFIERS(96),
-    AT_LEAST_ONCE(90), // +
-    UNKNOWN(80), // *
-    AT_MOST_ONCE(89); // ?
-
-    companion object {
-        private val map = NodeType.values().associateBy(NodeType::tokenId)
-        fun fromValue(tokenId: Int): NodeType? = map[tokenId]
-    }
-}
-
 fun isGroupingBracketsNeed(node: GrammarAST): Boolean {
-    val nodeType = NodeType.fromValue(node.type)
-
-    return (nodeType == NodeType.BLOCK || nodeType == NodeType.SET || nodeType == NodeType.ALT) && node.children.size > 1
+    return (node.type == ANTLRParser.BLOCK || node.type == ANTLRParser.SET || node.type == ANTLRParser.ALT) && node.children.size > 1
 }
 
 fun isGroupingBracketsNeedRecursive(node: GrammarAST): Boolean {
@@ -41,21 +20,21 @@ fun isGroupingBracketsNeedRecursive(node: GrammarAST): Boolean {
 }
 
 fun isSingleChildOfRule(node: GrammarAST): Boolean {
-    if (NodeType.fromValue(node.type) == NodeType.RULE) return true
+    if (node.type == ANTLRParser.RULE) return true
     if (node.children.size > 1) return false
 
     return isSingleChildOfRule(node.parent as GrammarAST)
 }
 
-class GrammarVisitor(private val generator: Generator): GrammarASTVisitor {
+class GrammarVisitor(private val generator: Generator<Any>): GrammarASTVisitor {
     override fun visit(node: GrammarAST) =
-            when (NodeType.fromValue(node.type)) {
-                NodeType.SEQUENCE -> node.text
-                NodeType.SET -> {
+            when (node.type) {
+                ANTLRParser.LEXER_CHAR_SET -> generator.root()
+                ANTLRParser.SET -> {
                     val groupingBracketsNeed = isGroupingBracketsNeedRecursive(node) && !isSingleChildOfRule(node.parent as GrammarAST)
                     generator.set(groupingBracketsNeed, node.childrenAsArray.map { it.visit(this) })
                 }
-                else -> ""
+                else -> generator.root()
             }
 
     override fun visit(node: GrammarRootAST) = generator.root()
