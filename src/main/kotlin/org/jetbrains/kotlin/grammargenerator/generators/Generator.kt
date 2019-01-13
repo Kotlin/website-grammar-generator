@@ -6,17 +6,19 @@ import org.antlr.v4.tool.ast.GrammarAST
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 import org.jetbrains.kotlin.grammargenerator.visitors.GrammarVisitor
+import org.jonnyzzz.kotlin.xml.dsl.XWriter
 
-interface Generator<T> {
+interface Generator<T, K> {
     val usedLexerRules: MutableSet<String>
-    val lexerRules: Map<String, Rule>?
+    val lexerRules: Map<String, Rule>
+    val parserRules: Map<String, Rule>
 
     fun optional(child: T, isGreedy: Boolean): T
     fun plus(child: T, isGreedy: Boolean): T
     fun star(child: T, isGreedy: Boolean): T
     fun not(child: T): T
     fun range(childLeft: T, childRight: T): T
-    fun rule(ruleName: String, children: List<T>): T
+    fun rule(children: List<T>, ruleName: String, lineNumber: Int): T
     fun block(groupingBracketsNeed: Boolean, children: List<T>): T
     fun set(groupingBracketsNeed: Boolean, children: List<T>): T
     fun alt(children: List<T>): T
@@ -24,19 +26,25 @@ interface Generator<T> {
     fun pred(): T
     fun ruleRef(node: RuleRefAST): T
     fun terminal(node: TerminalAST): T
-    fun run(visitor: GrammarVisitor, rules: List<Rule>, fragments: List<Rule>): String
+    fun run(builder: Generator<T, K>.(K) -> Unit): String
+
+    fun K.generateLexerRules(visitor: GrammarVisitor)
+    fun K.generateParserRules(visitor: GrammarVisitor)
+    fun K.generateNotationDescription()
 
     fun getLexerRule(node: TerminalAST): String? {
-        if (lexerRules == null)
-            return null
-
-        val rule = lexerRules!![node.token.text]
+        val rule = lexerRules[node.token.text]
 
         if (rule == null || !isSimpleLexerRule(rule.ast.childrenAsArray[1]))
             return null
 
         return rule.tokenRefs.single().also { usedLexerRules.add(rule.name) }
     }
+
+    fun filterLexerRules(rules: Map<String, Pair<Rule, ElementRenderResult>>, usedRules: Set<String>) =
+            rules.filter { (ruleName, ruleInfo) ->
+                !usedRules.contains(ruleName) && ruleInfo.first.mode != "Inside" && ruleName != "Hidden" && !ruleName.startsWith("UNICODE_CLASS")
+            }
 
     companion object {
         const val LENGTH_FOR_RULE_SPLIT = 120

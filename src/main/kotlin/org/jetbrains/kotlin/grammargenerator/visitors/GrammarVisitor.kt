@@ -26,7 +26,7 @@ fun isSingleChildOfRule(node: GrammarAST): Boolean {
     return isSingleChildOfRule(node.parent as GrammarAST)
 }
 
-class GrammarVisitor(private val generator: Generator<Any>): GrammarASTVisitor {
+class GrammarVisitor(private val generator: Generator<Any, Any>): GrammarASTVisitor {
     override fun visit(node: GrammarAST) =
             when (node.type) {
                 ANTLRParser.LEXER_CHAR_SET -> generator.root()
@@ -39,7 +39,7 @@ class GrammarVisitor(private val generator: Generator<Any>): GrammarASTVisitor {
 
     override fun visit(node: GrammarRootAST) = generator.root()
 
-    override fun visit(node: RuleAST) = generator.rule(node.ruleName, node.childrenAsArray.map { it.visit(this) })
+    override fun visit(node: RuleAST) = generator.rule(node.childrenAsArray.map { it.visit(this) }, node.ruleName, node.line)
 
     override fun visit(node: BlockAST): Any {
         val parent = node.parent as GrammarAST

@@ -6,7 +6,12 @@ import org.antlr.v4.tool.ast.TerminalAST
 import org.jetbrains.kotlin.grammargenerator.generators.Generator.Companion.LENGTH_FOR_RULE_SPLIT
 import org.jetbrains.kotlin.grammargenerator.visitors.GrammarVisitor
 
-class TextGenerator(override val lexerRules: Map<String, Rule>? = null) : Generator<String> {
+private typealias ITextGenerator = Generator<String, StringBuilder>
+
+class TextGenerator(
+        override val lexerRules: Map<String, Rule>,
+        override val parserRules: Map<String, Rule>
+) : ITextGenerator {
     override val usedLexerRules = mutableSetOf<String>()
 
     companion object {
@@ -27,11 +32,16 @@ class TextGenerator(override val lexerRules: Map<String, Rule>? = null) : Genera
     }
 
     override fun optional(child: String, isGreedy: Boolean) = "$child?" + addGreedyMarker(isGreedy)
+
     override fun plus(child: String, isGreedy: Boolean) = "$child+" + addGreedyMarker(isGreedy)
+
     override fun star(child: String, isGreedy: Boolean) = "$child*" + addGreedyMarker(isGreedy)
+
     override fun not(child: String) = "~$child"
+
     override fun range(childLeft: String, childRight: String) = "$childLeft..$childRight"
-    override fun rule(ruleName: String, children: List<String>) =
+
+    override fun rule(children: List<String>, ruleName: String, lineNumber: Int) =
             "$ruleName$ls: " + children.joinToString("") + "$ls;" + ls.repeat(2)
 
     override fun block(groupingBracketsNeed: Boolean, children: List<String>) = groupUsingPipe(children, groupingBracketsNeed)
@@ -48,10 +58,19 @@ class TextGenerator(override val lexerRules: Map<String, Rule>? = null) : Genera
 
     override fun terminal(node: TerminalAST): String = getLexerRule(node) ?: node.text
 
-    override fun run(visitor: GrammarVisitor, rules: List<Rule>, fragments: List<Rule>): String {
-        val fragmentsText = fragments.map { "[helper] " + it.ast.visit(visitor) }.joinToString("")
-        val rulesText = rules.map { it.ast.visit(visitor) }.joinToString("")
+    override fun run(builder: ITextGenerator.(StringBuilder) -> Unit) = StringBuilder().also { builder(it) }.toString()
 
-        return rulesText + fragmentsText
+    override fun StringBuilder.generateNotationDescription() {}
+
+    override fun StringBuilder.generateLexerRules(visitor: GrammarVisitor) {
+        this.append(
+                lexerRules.map { (_, ruleInfo) ->
+                    (if (ruleInfo.isFragment) "[helper] " else "") + ruleInfo.ast.visit(visitor)
+                }.joinToString("")
+        )
+    }
+
+    override fun StringBuilder.generateParserRules(visitor: GrammarVisitor) {
+        this.append(parserRules.map { (_, rule) -> rule.ast.visit(visitor) }.joinToString(""))
     }
 }
