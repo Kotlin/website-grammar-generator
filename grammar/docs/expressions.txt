@@ -1,0 +1,22 @@
+## Expressions
+
+### Precedence
+
+| Precedence | Title | Symbols |
+|------------|-------|---------|
+| Highest    | Postfix | `++`, `--`, `.`, `?.`, `?` |
+| | Prefix | `-`, `+`, `++`, `--`, `!`, [`labelDefinition`](#labelDefinition) |
+| | Type RHS | `:`, `as`, `as?` |
+| | Multiplicative | `*`, `/`, `%` |
+| | Additive | `+`, `-` |
+| | Range | `..` |
+| | Infix function | [`SimpleName`](#SimpleName) |
+| | Elvis | `?:` |
+| | Named checks | `in`, `!in`, `is`, `!is` |
+| | Comparison | `<`, `>`, `<=`, `>=` |
+| | Equality | `==`, `!==` |
+| | Conjunction | `&&` |
+| | Disjunction | `||` |
+| Lowest | Assignment | `=`, `+=`, `-=`, `*=`, `/=`, `%=` |
+
+### Rules

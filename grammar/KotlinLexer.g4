@@ -14,7 +14,7 @@ lexer grammar KotlinLexer;
 
 import UnicodeClasses;
 
-// SECTION: General
+// SECTION: lexicalGeneral
 
 ShebangLine
     : '#!' ~[\r\n]*
@@ -39,7 +39,7 @@ NL: '\n' | '\r' '\n'?;
 
 fragment Hidden: DelimitedComment | LineComment | WS;
 
-// SECTION: separators and operations
+// SECTION: separatorsAndOperations
 
 RESERVED: '...';
 DOT: '.';
@@ -149,7 +149,7 @@ GETTER: 'get';
 SETTER: 'set';
 DYNAMIC: 'dynamic';
 
-// SECTION: modifiers
+// SECTION: lexicalModifiers
 
 PUBLIC: 'public';
 PRIVATE: 'private';
@@ -213,7 +213,7 @@ LongLiteral
 
 IntegerLiteral
     : DecDigitNoZero DecDigitOrSeparator* DecDigit
-    | DecDigit // including '0'
+    | DecDigit
     ;
 
 fragment HexDigit: [0-9a-fA-F];
@@ -240,7 +240,7 @@ CharacterLiteral
     : '\'' (EscapeSeq | ~[\n\r'\\]) '\''
     ;
 
-// SECTION: identifiers
+// SECTION: lexicalIdentifiers
 
 fragment UnicodeDigit: UNICODE_CLASS_ND;
 

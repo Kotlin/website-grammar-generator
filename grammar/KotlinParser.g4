@@ -14,7 +14,7 @@ parser grammar KotlinParser;
 
 options { tokenVocab = KotlinLexer; }
 
-// SECTION: General
+// SECTION: general
 
 kotlinFile
     : shebangLine? NL* fileAnnotation* packageHeader importList topLevelObject* EOF
@@ -64,7 +64,7 @@ declaration
     | typeAlias
     ;
 
-// SECTION: Classes
+// SECTION: classes
 
 classDeclaration
     : modifiers? (CLASS | INTERFACE) NL* simpleIdentifier
@@ -129,7 +129,7 @@ typeConstraint
     : annotation* simpleIdentifier NL* COLON NL* type
     ;
 
-// SECTION: Class members
+// SECTION: classMembers
 
 classMemberDeclarations
     : (classMemberDeclaration semis?)*
@@ -231,7 +231,7 @@ constructorDelegationCall
     | SUPER NL* valueArguments
     ;
 
-// SECTION: Enum classes
+// SECTION: enumClasses
 
 enumClassBody
     : LCURL NL* enumEntries? (NL* SEMICOLON NL* classMemberDeclarations)? NL* RCURL
@@ -245,7 +245,7 @@ enumEntry
     : (modifiers NL*)? simpleIdentifier (NL* valueArguments)? (NL* classBody)?
     ;
 
-// SECTION: Types
+// SECTION: types
 
 type
     : typeModifiers?
@@ -314,7 +314,7 @@ parenthesizedUserType
     | LPAREN NL* parenthesizedUserType NL* RPAREN
     ;
 
-// SECTION: Statements
+// SECTION: statements
 
 statements
     : (statement (semis statement)* semis?)?
@@ -374,7 +374,7 @@ semis
     | EOF
     ;
 
-// SECTION: Expressions
+// SECTION: expressions
 
 expression
     : disjunction
@@ -732,7 +732,7 @@ safeNav
     : QUEST_NO_WS DOT
     ;
 
-// SECTION: Modifiers
+// SECTION: modifiers
 
 modifiers
     : (annotation | modifier)+
@@ -826,7 +826,7 @@ platformModifier
     | ACTUAL
     ;
 
-// SECTION: Annotations
+// SECTION: annotations
 
 annotation
     : (singleAnnotation | multiAnnotation) NL*
@@ -858,7 +858,7 @@ unescapedAnnotation
     | userType
     ;
 
-// SECTION: Identifiers
+// SECTION: identifiers
 
 simpleIdentifier: IdentifierOrSoftKey;
 
