@@ -19,15 +19,19 @@ class TextGenerator(override val lexerRules: Map<String, Rule>, override val par
 
     private fun addGreedyMarker(isGreedy: Boolean) = if (isGreedy) "" else "?"
 
-    private fun joinThroughLength(nodes: List<String>) = nodes.reduce { acc, s ->
-        acc + (if (acc.substringAfterLast(ls).length + s.length < LENGTH_FOR_RULE_SPLIT) "" else ls) + " $s"
+    private fun joinThroughLength(nodes: List<String>, groupingBracketsNeed: Boolean): String {
+        val groupedNodes = nodes.reduce { acc, s ->
+            acc + (if (acc.substringAfterLast(ls).length + s.length < LENGTH_FOR_RULE_SPLIT) "" else ls) + " $s"
+        }
+
+        return if (groupingBracketsNeed && nodes.size > 1) "($groupedNodes)" else groupedNodes
     }
 
     private fun groupUsingPipe(nodes: List<Any>, groupingBracketsNeed: Boolean): String {
         val leftSeparator = if (groupingBracketsNeed) " " else ls
         val groupedNodes = nodes.joinToString("$leftSeparator| ") { it as String }
 
-        return if (groupingBracketsNeed) "($groupedNodes)" else groupedNodes
+        return if (groupingBracketsNeed && nodes.size > 1) "($groupedNodes)" else groupedNodes
     }
 
     private fun getVisitedRules(rules: Map<String, Rule>, visitor: GrammarVisitor) =
@@ -52,7 +56,7 @@ class TextGenerator(override val lexerRules: Map<String, Rule>, override val par
 
     override fun set(groupingBracketsNeed: Boolean, children: List<String>) = groupUsingPipe(children, groupingBracketsNeed)
 
-    override fun alt(children: List<String>) = joinThroughLength(children)
+    override fun alt(groupingBracketsNeed: Boolean, children: List<String>) = joinThroughLength(children, groupingBracketsNeed)
 
     override fun root() = ""
 
@@ -71,7 +75,7 @@ class TextGenerator(override val lexerRules: Map<String, Rule>, override val par
     override fun StringBuilder.generateLexerRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.LEXER
 
-        val lexerRulesVisited = filterLexerRules(getVisitedRules(lexerRules, visitor), usedLexerRules)
+        val lexerRulesVisited = getVisitedRules(filterLexerRules(lexerRules, usedLexerRules), visitor)
 
         this.append(
                 lexerRulesVisited.map { (_, ruleInfo) ->
@@ -88,7 +92,9 @@ class TextGenerator(override val lexerRules: Map<String, Rule>, override val par
         val parserRulesVisited = getVisitedRules(parserRules, visitor)
 
         this.append(
-                parserRulesVisited.map { (_, ruleInfo) -> ruleInfo.second }.joinToString("")
+                parserRulesVisited.map { (_, ruleInfo) ->
+                    ruleInfo.second
+                }.joinToString("")
         )
     }
 }

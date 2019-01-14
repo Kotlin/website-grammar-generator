@@ -76,7 +76,6 @@ COLONCOLON: '::';
 DOUBLE_SEMICOLON: ';;';
 HASH: '#';
 AT: '@';
-AT_WS: AT (Hidden | NL);
 QUEST_WS: '?' Hidden;
 QUEST_NO_WS: '?';
 LANGLE: '<';
@@ -124,7 +123,6 @@ COMPANION: 'companion';
 INIT: 'init'  ;
 THIS: 'this';
 SUPER: 'super';
-TYPEOF: 'typeof';
 WHERE: 'where';
 IF: 'if';
 ELSE: 'else';
@@ -190,7 +188,7 @@ fragment DecDigits
     | DecDigit
     ;
 
-fragment DoubleExponent: [eE] [+-]? DecDigits;
+DoubleExponent: [eE] [+-]? DecDigits;
 
 RealLiteral
     : FloatLiteral
@@ -326,8 +324,6 @@ fragment Letter
     | UNICODE_CLASS_NL
     ;
 
-ErrorCharacter: .;
-
 // SECTION: strings
 
 QUOTE_OPEN: '"' -> pushMode(LineString);
@@ -378,8 +374,6 @@ MultiLineStrText
 MultiLineStrExprStart
     : '${' -> pushMode(DEFAULT_MODE)
     ;
-
-MultiLineNL: NL -> type(NL);
 
 // SECTION: inside
 
