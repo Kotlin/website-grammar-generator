@@ -1,0 +1,19 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Generate text grammar" type="JetRunConfigurationType" factoryName="Kotlin">
+    <module name="kotlin-website-grammar-generator_main" />
+    <option name="VM_PARAMETERS" value="" />
+    <option name="PROGRAM_PARAMETERS" value="-l &quot;KotlinLexer.g4&quot; -p &quot;KotlinParser.g4&quot; --text -o &quot;./KotlinGrammar.xml&quot;" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <option name="MAIN_CLASS_NAME" value="org.jetbrains.kotlin.grammargenerator.MainKt" />
+    <option name="WORKING_DIRECTORY" value="file://grammar" />
+    <envs>
+      <env name="user.dir" value="$PROJECT_DIR$/grammar" />
+      <env name="MODULE_DIR" value="$PROJECT_DIR$/grammar" />
+    </envs>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
