@@ -41,15 +41,18 @@ class GrammarVisitor(private val generator: Generator<Any, Any>): GrammarASTVisi
     override fun visit(node: RuleAST) = generator.rule(node.childrenAsArray.map { it.visit(this) }, node.ruleName, node.line)
 
     override fun visit(node: BlockAST): Any {
-        val parent = node.parent as GrammarAST
-        val groupingBracketsNeed = isGroupingBracketsNeedRecursive(node) && !isSingleChildOfRule(parent)
+        val groupingBracketsNeed = isGroupingBracketsNeedRecursive(node) && !isSingleChildOfRule(node.parent as GrammarAST)
 
         return generator.block(groupingBracketsNeed, node.childrenAsArray.map { it.visit(this) })
     }
     override fun visit(node: OptionalBlockAST) = generator.optional(node.childrenAsArray[0].visit(this), node.isGreedy)
     override fun visit(node: PlusBlockAST) = generator.plus(node.childrenAsArray[0].visit(this), node.isGreedy)
     override fun visit(node: StarBlockAST) = generator.star(node.childrenAsArray[0].visit(this), node.isGreedy)
-    override fun visit(node: AltAST) = generator.alt(node.childrenAsArray.map { it.visit(this) })
+    override fun visit(node: AltAST): Any {
+        val groupingBracketsNeed = isGroupingBracketsNeedRecursive(node) && node.parent.parent.type != ANTLRParser.RULE
+
+        return generator.alt(groupingBracketsNeed, node.childrenAsArray.map { it.visit(this) })
+    }
     override fun visit(node: NotAST) = generator.not(node.childrenAsArray[0].visit(this))
     override fun visit(node: PredAST) = generator.pred()
     override fun visit(node: RangeAST) = generator.range(node.childrenAsArray[0].visit(this), node.childrenAsArray[1].visit(this))

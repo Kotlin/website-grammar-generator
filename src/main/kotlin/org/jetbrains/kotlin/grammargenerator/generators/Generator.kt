@@ -22,7 +22,7 @@ interface Generator<T, K> {
     fun rule(children: List<T>, ruleName: String, lineNumber: Int): T
     fun block(groupingBracketsNeed: Boolean, children: List<T>): T
     fun set(groupingBracketsNeed: Boolean, children: List<T>): T
-    fun alt(children: List<T>): T
+    fun alt(groupingBracketsNeed: Boolean, children: List<T>): T
     fun root(): T
     fun pred(): T
     fun ruleRef(node: RuleRefAST): T
@@ -35,24 +35,21 @@ interface Generator<T, K> {
     fun K.generateNotationDescription()
 
     fun getLexerRule(node: TerminalAST): String? {
-        if (currentMode == GeneratorType.LEXER)
-            return null
-
         val rule = lexerRules[node.token.text]
 
         if (rule == null || !isSimpleLexerRule(rule.ast.childrenAsArray[1]))
             return null
 
-        return rule.tokenRefs.single().also { usedLexerRules.add(rule.name) }
+        return rule.tokenRefs.singleOrNull()?.also { usedLexerRules.add(rule.name) }
     }
 
-    fun filterLexerRules(rules: Map<String, Pair<Rule, T>>, usedRules: Set<String>) =
-            rules.filter { (ruleName, ruleInfo) ->
-                !usedRules.contains(ruleName) && ruleInfo.first.mode != "Inside" && ruleName != "Hidden" && !ruleName.startsWith("UNICODE_CLASS")
+    fun filterLexerRules(rules: Map<String, Rule>, usedRules: Set<String>) =
+            rules.filter { (ruleName, rule) ->
+                rule.mode != "Inside" && !ruleName.startsWith("UNICODE_CLASS")
             }
 
     companion object {
-        const val LENGTH_FOR_RULE_SPLIT = 120
+        const val LENGTH_FOR_RULE_SPLIT = 95
 
         val rootNodes = setOf("kotlinFile", "script")
 

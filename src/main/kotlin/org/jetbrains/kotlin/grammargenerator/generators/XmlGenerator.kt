@@ -39,6 +39,9 @@ class XmlGenerator(
     override val usedLexerRules = mutableSetOf<String>()
     override lateinit var currentMode: GeneratorType
 
+    private val Rule.excluded: Boolean
+        get() = usedLexerRules.contains(this.name)
+
     private var currentRule: String? = null
     private val usagesMap = mutableMapOf<String, Pair<XWriter?, MutableSet<String>>>()
 
@@ -54,40 +57,52 @@ class XmlGenerator(
     }
 
     private fun joinThroughLength(
-            elements: List<ElementRenderResult>
-    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength }) {
+            elements: List<ElementRenderResult>,
+            groupingBracketsNeed: Boolean
+    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength + elements.size }) {
         var bufferSize = 0
+
+        if (groupingBracketsNeed && elements.size > 1)
+            element("symbol") { cdata("(") }
 
         elements.forEachIndexed { index, (elementTextLength, _, buildElement) ->
             if (index != 0) {
                 bufferSize += elementTextLength
                 if (bufferSize > LENGTH_FOR_RULE_SPLIT) {
                     element("crlf")
+                    element("whiteSpace")
                     bufferSize = 0
                 }
                 element("whiteSpace")
             }
             buildElement()
         }
+
+        if (groupingBracketsNeed && elements.size > 1)
+            element("symbol") { cdata(")") }
     }
 
     private fun groupUsingPipe(
             elements: List<ElementRenderResult>,
             groupingBracketsNeed: Boolean
-    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength }) {
-        if (groupingBracketsNeed)
+    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength } + elements.size * 3) {
+        if (groupingBracketsNeed && elements.size > 1)
             element("symbol") { cdata("(") }
 
         elements.forEachIndexed { index, (_, _, buildElement) ->
             if (index != 0) {
-                if (groupingBracketsNeed) element("whiteSpace") else element("crlf")
+                if (groupingBracketsNeed) element("whiteSpace") else {
+                    element("crlf")
+                    element("whiteSpace")
+                    element("whiteSpace")
+                }
                 element("symbol") { cdata("|") }
                 element("whiteSpace")
             }
             buildElement()
         }
 
-        if (groupingBracketsNeed)
+        if (groupingBracketsNeed && elements.size > 1)
             element("symbol") { cdata(")") }
     }
 
@@ -135,13 +150,25 @@ class XmlGenerator(
                 if (this != currentContext)
                     currentContext = this
 
-                element("item") {
-                    if (rule.isFragment) {
-                        element("annotation") {
-                            text("helper")
+                if (!rule.excluded) {
+                    element("item") {
+                        if (rule.isFragment) {
+                            element("annotation") {
+                                text("helper")
+                            }
                         }
+                        buildElement()
                     }
-                    buildElement()
+                }
+            }
+        }
+    }
+
+    private fun arrangeUsages() {
+        usagesMap.values.filter { (_, usages) -> usages.isNotEmpty() }.forEach { (xwriter, usages) ->
+            xwriter?.element("usages") {
+                usages.forEach {
+                    element("declaration") { text(it) }
                 }
             }
         }
@@ -203,27 +230,26 @@ class XmlGenerator(
     override fun rule(children: List<ElementRenderResult>, ruleName: String, lineNumber: Int) = ElementRenderResult(children.sumBy { it.contentLength }, getSectionDeclaration(lineNumber)) {
         currentRule = ruleName
 
-        usagesMap[ruleName] = Pair(this, usagesMap[ruleName]?.second ?: mutableSetOf())
-
         if (rootNodes.contains(ruleName)) {
             element("annotation") {
                 text("start")
             }
         }
         element("declaration") {
+            usagesMap[ruleName] = Pair(this, usagesMap[ruleName]?.second ?: mutableSetOf())
             attribute("name", ruleName)
         }
         element("description") {
-            element("whitespace")
-            element("whitespace")
+            element("whiteSpace")
+            element("whiteSpace")
             element("symbol") { cdata(":") }
-            element("whitespace")
+            element("whiteSpace")
             children.forEach {
                 (_, _, buildElement) -> buildElement()
             }
             element("crlf")
-            element("whitespace")
-            element("whitespace")
+            element("whiteSpace")
+            element("whiteSpace")
             element("other") { text(";") }
         }
     }
@@ -232,7 +258,7 @@ class XmlGenerator(
 
     override fun set(groupingBracketsNeed: Boolean, children: List<ElementRenderResult>) = groupUsingPipe(children, groupingBracketsNeed)
 
-    override fun alt(children: List<ElementRenderResult>) = joinThroughLength(children)
+    override fun alt(groupingBracketsNeed: Boolean, children: List<ElementRenderResult>) = joinThroughLength(children, groupingBracketsNeed)
 
     override fun root() = ElementRenderResult(0) {}
 
@@ -247,9 +273,7 @@ class XmlGenerator(
     }
 
     override fun charsSet(node: GrammarAST) = ElementRenderResult(node.text.length) {
-        element("symbol") { cdata ("[") }
         element("string") { cdata (node.text) }
-        element("symbol") { cdata ("]") }
     }
 
     override fun terminal(node: TerminalAST): ElementRenderResult {
@@ -261,14 +285,22 @@ class XmlGenerator(
                     usagesMap.computeIfAbsent(node.text) { Pair(null, mutableSetOf()) }
                     usagesMap[node.text]?.second?.add(currentRule!!)
                 }
-                element("string") { cdata(nodeText) }
+
+                if (lexerRules.contains(node.text) && lexerRule == null) {
+                    element("identifier") { attribute("name", nodeText) }
+                } else {
+                    element("string") { cdata(nodeText) }
+                }
             }
         }
     }
 
-    override fun run(builder: IXmlGenerator.(XWriter) -> Unit): String =
+    override fun run(builder: IXmlGenerator.(XWriter) -> Unit) =
             XMLOutputter(Format.getPrettyFormat()).outputString(
-                    jdom("tokens") { builder(this) }
+                    jdom("tokens") {
+                        builder(this)
+                        arrangeUsages()
+                    }
             )
 
     override fun XWriter.generateNotationDescription() {
@@ -279,21 +311,11 @@ class XmlGenerator(
 
     override fun XWriter.generateLexerRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.LEXER
-
-        generateRules(rules = filterLexerRules(getVisitedRules(lexerRules, visitor), usedLexerRules))
+        generateRules(rules = (getVisitedRules(filterLexerRules(lexerRules, usedLexerRules), visitor)))
     }
 
     override fun XWriter.generateParserRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.PARSER
-
         generateRules(rules = getVisitedRules(parserRules, visitor))
-
-        usagesMap.values.filter { (_, usages) -> usages.isNotEmpty() }.forEach { (xwriter, usages) ->
-            xwriter?.element("usages") {
-                usages.forEach {
-                    element("declaration") { text(it) }
-                }
-            }
-        }
     }
 }

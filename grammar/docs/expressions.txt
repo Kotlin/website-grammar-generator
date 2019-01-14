@@ -5,12 +5,12 @@
 | Precedence | Title | Symbols |
 |------------|-------|---------|
 | Highest    | Postfix | `++`, `--`, `.`, `?.`, `?` |
-| | Prefix | `-`, `+`, `++`, `--`, `!`, [`labelDefinition`](#labelDefinition) |
+| | Prefix | `-`, `+`, `++`, `--`, `!`, [`label`](#label) |
 | | Type RHS | `:`, `as`, `as?` |
 | | Multiplicative | `*`, `/`, `%` |
 | | Additive | `+`, `-` |
 | | Range | `..` |
-| | Infix function | [`SimpleName`](#SimpleName) |
+| | Infix function | [`simpleIdentifier`](#simpleIdentifier) |
 | | Elvis | `?:` |
 | | Named checks | `in`, `!in`, `is`, `!is` |
 | | Comparison | `<`, `>`, `<=`, `>=` |
