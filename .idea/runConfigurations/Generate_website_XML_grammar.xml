@@ -2,7 +2,7 @@
   <configuration default="false" name="Generate website XML grammar" type="JetRunConfigurationType" factoryName="Kotlin">
     <module name="kotlin-website-grammar-generator_main" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="-l &quot;KotlinLexer.g4&quot; -p &quot;KotlinParser.g4&quot; --xml -o &quot;./KotlinGrammar.xml&quot;" />
+    <option name="PROGRAM_PARAMETERS" value="-l &quot;KotlinLexer.g4&quot; -p &quot;KotlinParser.g4&quot; --xml -o &quot;KotlinGrammar.xml&quot;" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />
