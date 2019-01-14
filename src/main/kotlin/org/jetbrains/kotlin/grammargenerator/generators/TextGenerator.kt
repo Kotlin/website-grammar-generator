@@ -1,6 +1,7 @@
 package org.jetbrains.kotlin.grammargenerator.generators
 
 import org.antlr.v4.tool.Rule
+import org.antlr.v4.tool.ast.GrammarAST
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 import org.jetbrains.kotlin.grammargenerator.generators.Generator.Companion.LENGTH_FOR_RULE_SPLIT
@@ -8,11 +9,9 @@ import org.jetbrains.kotlin.grammargenerator.visitors.GrammarVisitor
 
 private typealias ITextGenerator = Generator<String, StringBuilder>
 
-class TextGenerator(
-        override val lexerRules: Map<String, Rule>,
-        override val parserRules: Map<String, Rule>
-) : ITextGenerator {
+class TextGenerator(override val lexerRules: Map<String, Rule>, override val parserRules: Map<String, Rule>) : ITextGenerator {
     override val usedLexerRules = mutableSetOf<String>()
+    override lateinit var currentMode: GeneratorType
 
     companion object {
         val ls: String = System.lineSeparator()
@@ -30,6 +29,11 @@ class TextGenerator(
 
         return if (groupingBracketsNeed) "($groupedNodes)" else groupedNodes
     }
+
+    private fun getVisitedRules(rules: Map<String, Rule>, visitor: GrammarVisitor) =
+            rules.entries.associate { (ruleName, rule) ->
+                ruleName to Pair(rule, rule.ast.visit(visitor) as String)
+            }
 
     override fun optional(child: String, isGreedy: Boolean) = "$child?" + addGreedyMarker(isGreedy)
 
@@ -54,6 +58,8 @@ class TextGenerator(
 
     override fun pred() = ""
 
+    override fun charsSet(node: GrammarAST) = node.text
+
     override fun ruleRef(node: RuleRefAST): String = node.text
 
     override fun terminal(node: TerminalAST): String = getLexerRule(node) ?: node.text
@@ -63,14 +69,26 @@ class TextGenerator(
     override fun StringBuilder.generateNotationDescription() {}
 
     override fun StringBuilder.generateLexerRules(visitor: GrammarVisitor) {
+        currentMode = GeneratorType.LEXER
+
+        val lexerRulesVisited = filterLexerRules(getVisitedRules(lexerRules, visitor), usedLexerRules)
+
         this.append(
-                lexerRules.map { (_, ruleInfo) ->
-                    (if (ruleInfo.isFragment) "[helper] " else "") + ruleInfo.ast.visit(visitor)
+                lexerRulesVisited.map { (_, ruleInfo) ->
+                    val (rule, elementText) = ruleInfo
+
+                    (if (rule.isFragment) "[helper] " else "") + elementText
                 }.joinToString("")
         )
     }
 
     override fun StringBuilder.generateParserRules(visitor: GrammarVisitor) {
-        this.append(parserRules.map { (_, rule) -> rule.ast.visit(visitor) }.joinToString(""))
+        currentMode = GeneratorType.PARSER
+
+        val parserRulesVisited = getVisitedRules(parserRules, visitor)
+
+        this.append(
+                parserRulesVisited.map { (_, ruleInfo) -> ruleInfo.second }.joinToString("")
+        )
     }
 }

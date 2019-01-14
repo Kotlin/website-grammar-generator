@@ -12,6 +12,7 @@ interface Generator<T, K> {
     val usedLexerRules: MutableSet<String>
     val lexerRules: Map<String, Rule>
     val parserRules: Map<String, Rule>
+    var currentMode: GeneratorType
 
     fun optional(child: T, isGreedy: Boolean): T
     fun plus(child: T, isGreedy: Boolean): T
@@ -25,6 +26,7 @@ interface Generator<T, K> {
     fun root(): T
     fun pred(): T
     fun ruleRef(node: RuleRefAST): T
+    fun charsSet(node: GrammarAST): T
     fun terminal(node: TerminalAST): T
     fun run(builder: Generator<T, K>.(K) -> Unit): String
 
@@ -33,6 +35,9 @@ interface Generator<T, K> {
     fun K.generateNotationDescription()
 
     fun getLexerRule(node: TerminalAST): String? {
+        if (currentMode == GeneratorType.LEXER)
+            return null
+
         val rule = lexerRules[node.token.text]
 
         if (rule == null || !isSimpleLexerRule(rule.ast.childrenAsArray[1]))
@@ -41,7 +46,7 @@ interface Generator<T, K> {
         return rule.tokenRefs.single().also { usedLexerRules.add(rule.name) }
     }
 
-    fun filterLexerRules(rules: Map<String, Pair<Rule, ElementRenderResult>>, usedRules: Set<String>) =
+    fun filterLexerRules(rules: Map<String, Pair<Rule, T>>, usedRules: Set<String>) =
             rules.filter { (ruleName, ruleInfo) ->
                 !usedRules.contains(ruleName) && ruleInfo.first.mode != "Inside" && ruleName != "Hidden" && !ruleName.startsWith("UNICODE_CLASS")
             }

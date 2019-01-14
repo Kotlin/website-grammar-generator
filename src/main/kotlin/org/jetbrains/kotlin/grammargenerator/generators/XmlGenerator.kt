@@ -1,6 +1,7 @@
 package org.jetbrains.kotlin.grammargenerator.generators
 
 import org.antlr.v4.tool.Rule
+import org.antlr.v4.tool.ast.GrammarAST
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 import org.jdom2.output.Format
@@ -29,33 +30,22 @@ class XmlGenerator(
         private val lexerGrammarFileLines: List<String>,
         private val parserGrammarFileLines: List<String>
 ) : IXmlGenerator {
-    lateinit var currentMode: GeneratorType
-
     companion object {
         const val SECTION_DECLARATION_OFFSET = 3
+        const val DOCS_FOLDER = "docs"
         private val sectionPattern = Pattern.compile("""^// SECTION: (?<section>[ \w]*?)$""")
     }
 
     override val usedLexerRules = mutableSetOf<String>()
+    override lateinit var currentMode: GeneratorType
 
-    var currentRule: String? = null
-
+    private var currentRule: String? = null
     private val usagesMap = mutableMapOf<String, Pair<XWriter?, MutableSet<String>>>()
 
-    private fun XWriter.addDoc(docName: String) {
-        val sectionDocFile = File("docs/$docName.txt")
-
-        if (sectionDocFile.exists()) {
-            element("doc") {
-                cdata(sectionDocFile.readText())
+    private fun getVisitedRules(rules: Map<String, Rule>, visitor: GrammarVisitor) =
+            rules.entries.associate { (ruleName, rule) ->
+                ruleName to Pair(rule, rule.ast.visit(visitor) as ElementRenderResult)
             }
-        }
-    }
-
-    private fun getVisitedRules(rules: Map<String, Rule>, visitor: GrammarVisitor): Map<String, Pair<Rule, ElementRenderResult>> =
-            mutableMapOf<String, Pair<Rule, ElementRenderResult>>().apply {
-                rules.forEach { (ruleName, rule) -> this[ruleName] = Pair(rule, rule.ast.visit(visitor) as ElementRenderResult) }
-            }.toMap()
 
     private fun addGreedyMarker(isGreedy: Boolean) = ElementRenderResult(if (isGreedy) 0 else 1) {
         if (!isGreedy) {
@@ -65,11 +55,12 @@ class XmlGenerator(
 
     private fun joinThroughLength(
             elements: List<ElementRenderResult>
-    ) = ElementRenderResult(elements.sumBy { (nodeLength, _) -> nodeLength }) {
+    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength }) {
         var bufferSize = 0
-        elements.forEachIndexed { index, (contentLength, _, buildElement) ->
+
+        elements.forEachIndexed { index, (elementTextLength, _, buildElement) ->
             if (index != 0) {
-                bufferSize += contentLength
+                bufferSize += elementTextLength
                 if (bufferSize > LENGTH_FOR_RULE_SPLIT) {
                     element("crlf")
                     bufferSize = 0
@@ -83,8 +74,9 @@ class XmlGenerator(
     private fun groupUsingPipe(
             elements: List<ElementRenderResult>,
             groupingBracketsNeed: Boolean
-    ) = ElementRenderResult(elements.sumBy { (nodeLength, _) -> nodeLength }) {
-        if (groupingBracketsNeed) element("symbol") { cdata("(") }
+    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength }) {
+        if (groupingBracketsNeed)
+            element("symbol") { cdata("(") }
 
         elements.forEachIndexed { index, (_, _, buildElement) ->
             if (index != 0) {
@@ -95,7 +87,8 @@ class XmlGenerator(
             buildElement()
         }
 
-        if (groupingBracketsNeed) element("symbol") { cdata(")") }
+        if (groupingBracketsNeed)
+            element("symbol") { cdata(")") }
     }
 
     private fun getSectionDeclaration(ruleLineNumber: Int): String? {
@@ -104,16 +97,54 @@ class XmlGenerator(
 
         return sectionPattern.matcher(potentialSectionDeclarationLine).let {
             if (it.find()) it.group("section") else null
-        } ?: return null
+        }
     }
 
-    private fun runInContextBySectionInfo(rootContext: XWriter, currentContext: XWriter, sectionName: String?, builder: XWriter.() -> Unit) {
+    private fun runInContextBySectionInfo(
+            rootContext: XWriter,
+            currentContext: XWriter,
+            sectionName: String?,
+            builder: XWriter.() -> Unit
+    ) {
         if (sectionName != null) {
             rootContext.element("set") {
                 addDoc(sectionName)
                 builder()
             }
         } else builder(currentContext)
+    }
+
+    private fun XWriter.addDoc(docName: String) {
+        val sectionDocFile = File("$DOCS_FOLDER/$docName.txt")
+
+        if (sectionDocFile.exists()) {
+            element("doc") {
+                cdata(sectionDocFile.readText())
+            }
+        }
+    }
+
+    private fun XWriter.generateRules(rules: Map<String, Pair<Rule, ElementRenderResult>>) {
+        var currentContext = this
+
+        rules.forEach { (_, ruleInfo) ->
+            val (rule, result) = ruleInfo
+            val (_, sectionName, buildElement) = result
+
+            runInContextBySectionInfo(this, currentContext, sectionName) {
+                if (this != currentContext)
+                    currentContext = this
+
+                element("item") {
+                    if (rule.isFragment) {
+                        element("annotation") {
+                            text("helper")
+                        }
+                    }
+                    buildElement()
+                }
+            }
+        }
     }
 
     override fun optional(child: ElementRenderResult, isGreedy: Boolean): ElementRenderResult {
@@ -215,8 +246,14 @@ class XmlGenerator(
         usagesMap[node.text]?.second?.add(currentRule!!)
     }
 
+    override fun charsSet(node: GrammarAST) = ElementRenderResult(node.text.length) {
+        element("symbol") { cdata ("[") }
+        element("string") { cdata (node.text) }
+        element("symbol") { cdata ("]") }
+    }
+
     override fun terminal(node: TerminalAST): ElementRenderResult {
-        val lexerRule = if (currentMode != GeneratorType.LEXER) getLexerRule(node) else null
+        val lexerRule = getLexerRule(node)
 
         return (lexerRule ?: node.text).let { nodeText ->
             ElementRenderResult(nodeText.length) {
@@ -229,8 +266,10 @@ class XmlGenerator(
         }
     }
 
-    override fun run(builder: IXmlGenerator.(XWriter) -> Unit) =
-            XMLOutputter(Format.getPrettyFormat()).outputString(jdom("tokens") { builder(this) })
+    override fun run(builder: IXmlGenerator.(XWriter) -> Unit): String =
+            XMLOutputter(Format.getPrettyFormat()).outputString(
+                    jdom("tokens") { builder(this) }
+            )
 
     override fun XWriter.generateNotationDescription() {
         element("set") {
@@ -241,46 +280,13 @@ class XmlGenerator(
     override fun XWriter.generateLexerRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.LEXER
 
-        val lexerRulesVisited = getVisitedRules(lexerRules, visitor)
-        var currentContext = this
-
-        filterLexerRules(lexerRulesVisited, usedLexerRules).forEach { (_, ruleInfo) ->
-                    val (rule, result) = ruleInfo
-                    val (_, sectionName, buildElement) = result
-
-                    runInContextBySectionInfo(this, currentContext, sectionName) {
-                        if (this != currentContext) currentContext = this
-
-                        element("item") {
-                            if (rule.isFragment) {
-                                element("annotation") {
-                                    text("helper")
-                                }
-                            }
-                            buildElement()
-                        }
-                    }
-                }
+        generateRules(rules = filterLexerRules(getVisitedRules(lexerRules, visitor), usedLexerRules))
     }
 
     override fun XWriter.generateParserRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.PARSER
 
-        val parserRulesVisited = getVisitedRules(parserRules, visitor)
-        var currentContext = this
-
-        parserRulesVisited.forEach { (_, ruleInfo) ->
-            val (_, result) = ruleInfo
-            val (_, sectionName, buildElement) = result
-
-            runInContextBySectionInfo(this, currentContext, sectionName) {
-                if (this != currentContext) currentContext = this
-
-                element("item") {
-                    buildElement()
-                }
-            }
-        }
+        generateRules(rules = getVisitedRules(parserRules, visitor))
 
         usagesMap.values.filter { (_, usages) -> usages.isNotEmpty() }.forEach { (xwriter, usages) ->
             xwriter?.element("usages") {

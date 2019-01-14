@@ -27,15 +27,14 @@ fun isSingleChildOfRule(node: GrammarAST): Boolean {
 }
 
 class GrammarVisitor(private val generator: Generator<Any, Any>): GrammarASTVisitor {
-    override fun visit(node: GrammarAST) =
-            when (node.type) {
-                ANTLRParser.LEXER_CHAR_SET -> generator.root()
-                ANTLRParser.SET -> {
-                    val groupingBracketsNeed = isGroupingBracketsNeedRecursive(node) && !isSingleChildOfRule(node.parent as GrammarAST)
-                    generator.set(groupingBracketsNeed, node.childrenAsArray.map { it.visit(this) })
-                }
-                else -> generator.root()
-            }
+    override fun visit(node: GrammarAST) = when (node.type) {
+        ANTLRParser.LEXER_CHAR_SET -> generator.charsSet(node)
+        ANTLRParser.SET -> {
+            val groupingBracketsNeed = isGroupingBracketsNeedRecursive(node) && !isSingleChildOfRule(node.parent as GrammarAST)
+            generator.set(groupingBracketsNeed, node.childrenAsArray.map { it.visit(this) })
+        }
+        else -> generator.root()
+    }
 
     override fun visit(node: GrammarRootAST) = generator.root()
 
