@@ -91,7 +91,7 @@ class XmlGenerator(
             if (index != 0) {
                 if (groupingBracketsNeed) addWhitespace() else {
                     element("crlf")
-                    cdata("  ")
+                    addWhitespace(2)
                 }
                 element("symbol") { cdata("|") }
                 addWhitespace()
@@ -249,13 +249,14 @@ class XmlGenerator(
             attribute("name", ruleName)
         }
         element("description") {
-            cdata("  ")
+            addWhitespace(2)
             element("symbol") { cdata(":") }
             addWhitespace()
             children.forEach {
                 (_, _, buildElement) -> buildElement()
             }
             element("crlf")
+            addWhitespace(2)
             element("other") { text(";") }
         }
     }
