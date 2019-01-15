@@ -3,12 +3,12 @@ package org.jetbrains.kotlin.grammargenerator.generators
 import org.antlr.runtime.tree.CommonTree
 import org.antlr.v4.tool.Rule
 import org.antlr.v4.tool.ast.GrammarAST
-import org.antlr.v4.tool.ast.RuleElementAST
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import org.jetbrains.kotlin.grammargenerator.generators.Generator.Companion.LENGTH_FOR_RULE_SPLIT
+import org.jetbrains.kotlin.grammargenerator.generators.Generator.Companion.excludedRules
 import org.jetbrains.kotlin.grammargenerator.generators.Generator.Companion.rootNodes
 import org.jetbrains.kotlin.grammargenerator.visitors.GrammarVisitor
 import org.jonnyzzz.kotlin.xml.dsl.XWriter
@@ -58,28 +58,34 @@ class XmlGenerator(
         }
     }
 
-    private fun removeRedundantSubtree(node: CommonTree) {
-        if (node.parent != null) {
-            node.parent.children.remove(node)
+    private fun removeSubtreeFromExcludedRule(node: CommonTree) {
+        if (node.parent == null)
+            return
 
-            if (node.parent.children != null && node.parent.children.size == 0)
-                removeRedundantSubtree(node.parent)
-        }
+        node.parent.children.remove(node)
+
+        if (node.parent.children?.isEmpty() == true)
+            removeSubtreeFromExcludedRule(node.parent)
     }
 
-    private fun ruleTreePreFilter(node: GrammarAST) {
+    private fun excludeRulesRecursive(node: GrammarAST) {
         if (node.children == null)
             return
 
         node.childrenAsArray.forEachIndexed { index, child ->
-            if (child.text == "NL" || child.text == "semi" || child.text == "semis") {
+            if (excludedRules.contains(child.text)) {
                 node.children.removeAt(index)
-                removeRedundantSubtree(node)
+                removeSubtreeFromExcludedRule(node)
             } else {
-                ruleTreePreFilter(child)
+                excludeRulesRecursive(child)
             }
         }
     }
+
+    private fun excludeRules(rules: Map<String, Rule>) =
+            rules.filterKeys { !excludedRules.contains(it) }.apply {
+                forEach { (_, rule) -> excludeRulesRecursive(rule.ast) }
+            }
 
     private fun joinThroughLength(
             elements: List<ElementRenderResult>,
@@ -347,20 +353,12 @@ class XmlGenerator(
     override fun XWriter.generateLexerRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.LEXER
 
-        val filteredRules = lexerRules.filterKeys { it != "NL" && it != "semi" && it != "semis" }
-
-        filteredRules.forEach { (_, rule) -> ruleTreePreFilter(rule.ast) }
-
-        generateRules(rules = (getVisitedRules(filterLexerRules(lexerRules, usedLexerRules), visitor)))
+        generateRules(rules = getVisitedRules(filterLexerRules(excludeRules(lexerRules), usedLexerRules), visitor))
     }
 
     override fun XWriter.generateParserRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.PARSER
 
-        val filteredRules = parserRules.filterKeys { it != "NL" && it != "semi" && it != "semis" }
-
-        filteredRules.forEach { (_, rule) -> ruleTreePreFilter(rule.ast) }
-
-        generateRules(rules = getVisitedRules(filteredRules, visitor))
+        generateRules(rules = getVisitedRules(excludeRules(parserRules), visitor))
     }
 }
