@@ -28,7 +28,6 @@ Symbol definitions may be prepended with _attributes_:
 
 Also for convenience of reading some simplifications are made:
 - lexer rules consisting of one string literal element is inlined to the place of use,
-- new line tokens are excluded,
-- semicolon tokens are excluded.
+- new line tokens are excluded.
 
-New lines and semicolons have some nuances (see source grammar files for details).
+New lines have some nuances (see source grammar files for details).

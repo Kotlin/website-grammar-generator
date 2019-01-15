@@ -52,7 +52,7 @@ interface Generator<T, K> {
         const val LENGTH_FOR_RULE_SPLIT = 60
 
         val rootNodes = setOf("kotlinFile", "script")
-        val excludedRules = setOf("NL", "semi", "semis")
+        val excludedRules = setOf("NL")
 
         private val supportedNodes = setOf(
                 ANTLRParser.TOKEN_REF,
