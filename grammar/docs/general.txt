@@ -1,5 +1,5 @@
-# Syntax
+## Syntax
 
-## General
+### General
 
 Relevant pages: [Packages](packages.html)

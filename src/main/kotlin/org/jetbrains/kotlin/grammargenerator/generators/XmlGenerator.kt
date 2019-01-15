@@ -70,10 +70,8 @@ class XmlGenerator(
                 bufferSize += elementTextLength
                 if (bufferSize > LENGTH_FOR_RULE_SPLIT) {
                     element("crlf")
-                    element("whiteSpace")
                     bufferSize = 0
-                }
-                element("whiteSpace")
+                } else addWhitespace()
             }
             buildElement()
         }
@@ -91,13 +89,12 @@ class XmlGenerator(
 
         elements.forEachIndexed { index, (_, _, buildElement) ->
             if (index != 0) {
-                if (groupingBracketsNeed) element("whiteSpace") else {
+                if (groupingBracketsNeed) addWhitespace() else {
                     element("crlf")
-                    element("whiteSpace")
-                    element("whiteSpace")
+                    cdata("  ")
                 }
                 element("symbol") { cdata("|") }
-                element("whiteSpace")
+                addWhitespace()
             }
             buildElement()
         }
@@ -123,6 +120,7 @@ class XmlGenerator(
     ) {
         if (sectionName != null) {
             rootContext.element("set") {
+                attribute("file-name", "sectionName")
                 addDoc(sectionName)
                 builder()
             }
@@ -139,18 +137,29 @@ class XmlGenerator(
         }
     }
 
+    private fun XWriter.addWhitespace(number: Int = 1) {
+        element("string") {
+            cdata("&nbsp;".repeat(number))
+        }
+    }
+
     private fun XWriter.generateRules(rules: Map<String, Pair<Rule, ElementRenderResult>>) {
         var currentContext = this
+        var currentSectionName: String? = null
 
         rules.forEach { (_, ruleInfo) ->
             val (rule, result) = ruleInfo
             val (_, sectionName, buildElement) = result
+
+            if (sectionName != null && sectionName != currentSectionName)
+                currentSectionName = sectionName
 
             runInContextBySectionInfo(this, currentContext, sectionName) {
                 if (this != currentContext)
                     currentContext = this
 
                 if (!rule.excluded) {
+                    addDoc("$currentSectionName/${rule.name}")
                     element("item") {
                         if (rule.isFragment) {
                             element("annotation") {
@@ -240,16 +249,13 @@ class XmlGenerator(
             attribute("name", ruleName)
         }
         element("description") {
-            element("whiteSpace")
-            element("whiteSpace")
+            cdata("  ")
             element("symbol") { cdata(":") }
-            element("whiteSpace")
+            addWhitespace()
             children.forEach {
                 (_, _, buildElement) -> buildElement()
             }
             element("crlf")
-            element("whiteSpace")
-            element("whiteSpace")
             element("other") { text(";") }
         }
     }
@@ -282,11 +288,11 @@ class XmlGenerator(
         return (lexerRule ?: node.text).let { nodeText ->
             ElementRenderResult(nodeText.length) {
                 if (lexerRule == null) {
-                    usagesMap.computeIfAbsent(node.text) { Pair(null, mutableSetOf()) }
+                    usagesMap.computeIfAbsent(nodeText) { Pair(null, mutableSetOf()) }
                     usagesMap[node.text]?.second?.add(currentRule!!)
                 }
 
-                if (lexerRules.contains(node.text) && lexerRule == null) {
+                if (lexerRules.contains(nodeText) && lexerRule == null) {
                     element("identifier") { attribute("name", nodeText) }
                 } else {
                     element("string") { cdata(nodeText) }
@@ -305,6 +311,7 @@ class XmlGenerator(
 
     override fun XWriter.generateNotationDescription() {
         element("set") {
+            attribute("file-name", "notation")
             addDoc("notation")
         }
     }

@@ -1,0 +1,1 @@
+Kotlin provides "semicolon inference": syntactically, subsentences (e.g., statements, declarations, etc) are separated by this token, which stands for "semicolon or newline". In most cases, there's no need for semicolons in Kotlin code.
