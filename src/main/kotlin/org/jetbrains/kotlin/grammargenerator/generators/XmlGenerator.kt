@@ -71,7 +71,9 @@ class XmlGenerator(
                 if (bufferSize > LENGTH_FOR_RULE_SPLIT) {
                     element("crlf")
                     bufferSize = 0
-                } else addWhitespace()
+                    addWhitespace()
+                }
+                addWhitespace()
             }
             buildElement()
         }
