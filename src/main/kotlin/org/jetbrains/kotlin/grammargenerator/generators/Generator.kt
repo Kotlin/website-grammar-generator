@@ -73,7 +73,7 @@ interface Generator<T, K> {
                 return false
 
             if (rule.children == null || rule.children.size == 0)
-                return true
+                return rule.type == ANTLRParser.STRING_LITERAL
 
             return isSimpleLexerRule(rule.childrenAsArray[0])
         }

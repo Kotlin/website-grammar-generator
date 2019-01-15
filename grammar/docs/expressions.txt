@@ -1,6 +1,4 @@
-## Expressions
-
-### Precedence
+### Expressions
 
 | Precedence | Title | Symbols |
 |------------|-------|---------|
@@ -18,5 +16,3 @@
 | | Conjunction | `&&` |
 | | Disjunction | `||` |
 | Lowest | Assignment | `=`, `+=`, `-=`, `*=`, `/=`, `%=` |
-
-### Rules

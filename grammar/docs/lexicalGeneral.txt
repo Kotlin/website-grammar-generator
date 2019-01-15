@@ -1,3 +1,33 @@
-# Lexical structure
+## Lexical structure
 
-## General
+### Unicode classes
+
+<h4 id="UNICODE_CLASS_LL">UNICODE_CLASS_LL</h4>
+
+**See [UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4#L12){:target="_blank"}**
+
+<h4 id="UNICODE_CLASS_LM">UNICODE_CLASS_LM</h4>
+
+**See [UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4#L616){:target="_blank"}**
+
+<h4 id="UNICODE_CLASS_LO">UNICODE_CLASS_LO</h4>
+
+**See [UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4#L676){:target="_blank"}**
+
+<h4 id="UNICODE_CLASS_LT">UNICODE_CLASS_LT</h4>
+
+**See [UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4#L1002){:target="_blank"}**
+
+<h4 id="UNICODE_CLASS_LU">UNICODE_CLASS_LU</h4>
+
+**See [UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4#L1014){:target="_blank"}**
+
+<h4 id="UNICODE_CLASS_ND">UNICODE_CLASS_ND</h4>
+
+**See [UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4#L1608){:target="_blank"}**
+
+<h4 id="UNICODE_CLASS_NL">UNICODE_CLASS_NL</h4>
+
+**See [UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4#L1645){:target="_blank"}**
+
+### General

@@ -1,5 +1,10 @@
 /**
+ * Kotlin Lexer Grammar for ANTLR v4 (Unicode classes)
+ *
  * Taken from http://www.antlr3.org/grammar/1345144569663/AntlrUnicode.txt
+ *
+ * Tested on compiler parser tests:
+ * https://github.com/JetBrains/kotlin/tree/master/compiler/testData/psi
  */
 
 lexer grammar UnicodeClasses;
