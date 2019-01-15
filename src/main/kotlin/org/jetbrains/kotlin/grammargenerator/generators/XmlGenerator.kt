@@ -1,7 +1,9 @@
 package org.jetbrains.kotlin.grammargenerator.generators
 
+import org.antlr.runtime.tree.CommonTree
 import org.antlr.v4.tool.Rule
 import org.antlr.v4.tool.ast.GrammarAST
+import org.antlr.v4.tool.ast.RuleElementAST
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 import org.jdom2.output.Format
@@ -53,6 +55,29 @@ class XmlGenerator(
     private fun addGreedyMarker(isGreedy: Boolean) = ElementRenderResult(if (isGreedy) 0 else 1) {
         if (!isGreedy) {
             element("symbol") { cdata("?") }
+        }
+    }
+
+    private fun removeRedundantSubtree(node: CommonTree) {
+        if (node.parent != null) {
+            node.parent.children.remove(node)
+
+            if (node.parent.children != null && node.parent.children.size == 0)
+                removeRedundantSubtree(node.parent)
+        }
+    }
+
+    private fun ruleTreePreFilter(node: GrammarAST) {
+        if (node.children == null)
+            return
+
+        node.childrenAsArray.forEachIndexed { index, child ->
+            if (child.text == "NL" || child.text == "semi" || child.text == "semis") {
+                node.children.removeAt(index)
+                removeRedundantSubtree(node)
+            } else {
+                ruleTreePreFilter(child)
+            }
         }
     }
 
@@ -321,11 +346,21 @@ class XmlGenerator(
 
     override fun XWriter.generateLexerRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.LEXER
+
+        val filteredRules = lexerRules.filterKeys { it != "NL" && it != "semi" && it != "semis" }
+
+        filteredRules.forEach { (_, rule) -> ruleTreePreFilter(rule.ast) }
+
         generateRules(rules = (getVisitedRules(filterLexerRules(lexerRules, usedLexerRules), visitor)))
     }
 
     override fun XWriter.generateParserRules(visitor: GrammarVisitor) {
         currentMode = GeneratorType.PARSER
-        generateRules(rules = getVisitedRules(parserRules, visitor))
+
+        val filteredRules = parserRules.filterKeys { it != "NL" && it != "semi" && it != "semis" }
+
+        filteredRules.forEach { (_, rule) -> ruleTreePreFilter(rule.ast) }
+
+        generateRules(rules = getVisitedRules(filteredRules, visitor))
     }
 }

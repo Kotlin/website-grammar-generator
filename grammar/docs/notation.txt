@@ -10,7 +10,7 @@ Description of rules notation can be found in [ANTLR 4 repository](https://githu
 
 ### Grammar files
 
-Kotlin grammar files in ANTLR format are in [Kotlin specification repository](https://github.com/JetBrains/kotlin-spec/tree/spec-rework):
+Kotlin grammar files in ANTLR format are in [Kotlin specification repository](https://github.com/JetBrains/kotlin-spec/tree/spec-rework){:target="_blank"}:
 - **[LexerGrammar.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/KotlinLexer.g4){:target="_blank"}** describes [lexical structure](#lexical-structure);
 - **[UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4){:target="_blank"}** describes the characters that can be used in identifiers (these rules are omitted on this page for convenience of reading);
 - **[ParserGrammar.g4](https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/KotlinParser.g4){:target="_blank"}** describes [syntax](#syntax).
@@ -26,4 +26,9 @@ Symbol definitions may be prepended with _attributes_:
 - `start` attribute denotes a start symbol (see [kotlinFile](#kotlinFile) and [script](#script)),
 - `helper` attribute denotes a lexer fragment rule (used only inside other terminal symbols).
 
-Also for convenience of reading, lexer rules consisting of one string literal element is inlined to the place of use.
+Also for convenience of reading some simplifications are made:
+- lexer rules consisting of one string literal element is inlined to the place of use,
+- new lines (`NL` token) are excluded,
+- semicolons (`semi` and `semis` token) are excluded.
+
+New lines and semicolons have some nuances (see source grammar files for details).

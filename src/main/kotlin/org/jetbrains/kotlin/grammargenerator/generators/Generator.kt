@@ -49,7 +49,7 @@ interface Generator<T, K> {
             }
 
     companion object {
-        const val LENGTH_FOR_RULE_SPLIT = 95
+        const val LENGTH_FOR_RULE_SPLIT = 60
 
         val rootNodes = setOf("kotlinFile", "script")
 
