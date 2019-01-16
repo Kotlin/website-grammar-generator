@@ -21,7 +21,7 @@ enum class GeneratorType { LEXER, PARSER }
 data class ElementRenderResult(
         val contentLength: Int,
         val sectionName: String? = null,
-        val buildElement: XWriter.() -> Unit
+        val buildElement: XWriter.(rule: Rule) -> Unit
 )
 
 private typealias IXmlGenerator = Generator<ElementRenderResult, XWriter>
@@ -35,7 +35,40 @@ class XmlGenerator(
     companion object {
         const val SECTION_DECLARATION_OFFSET = 3
         const val DOCS_FOLDER = "docs"
+        private const val UNICODE_CLASSES_GRAMMAR_FILE_PATH = "https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4"
+
         private val sectionPattern = Pattern.compile("""^// SECTION: (?<section>[ \w]*?)$""")
+        private val unicodeClassesToLineInGrammarFileMap = mapOf(
+                "LL" to 12,
+                "LM" to 616,
+                "LO" to 676,
+                "LT" to 1002,
+                "LU" to 1014,
+                "ND" to 1608,
+                "NL" to 1645
+        )
+        // ruleName -> numbers of top-level rule element, after which new line is added
+        private val rulesWithCustomNewLines = mapOf(
+                "propertyDeclaration" to setOf(3, 4, 5, 6, 8),
+                "classDeclaration" to setOf(2, 4, 5, 6, 7),
+                "functionDeclaration" to setOf(3, 4, 6, 8),
+                "companionObject" to setOf(4, 5),
+                "getter" to setOf(4, 5),
+                "setter" to setOf(6, 7),
+                "secondaryConstructor" to setOf(3),
+                "forStatement" to setOf(1, 7),
+                "anonymousFunction" to setOf(3, 5),
+                "ifExpression" to setOf(4)
+        )
+
+        private fun getLinkToUnicodeClass(unicodeClass: String) =
+                "<a href=\"$UNICODE_CLASSES_GRAMMAR_FILE_PATH#L${unicodeClassesToLineInGrammarFileMap[unicodeClass]}\" target=\"_black\">UNICODE_CLASS_$unicodeClass</a>"
+
+        private fun renderUnicodeClassLink(unicodeClass: String): XWriter.() -> Unit = {
+            element("other") {
+                cdata(getLinkToUnicodeClass(unicodeClass))
+            }
+        }
     }
 
     override val usedLexerRules = mutableSetOf<String>()
@@ -46,6 +79,9 @@ class XmlGenerator(
 
     private var currentRule: String? = null
     private val usagesMap = mutableMapOf<String, Pair<XWriter?, MutableSet<String>>>()
+    private val customTerminalRenders = unicodeClassesToLineInGrammarFileMap.entries.associate { (unicodeClass, _) ->
+        "UNICODE_CLASS_$unicodeClass" to renderUnicodeClassLink(unicodeClass)
+    }
 
     private fun getVisitedRules(rules: Map<String, Rule>, visitor: GrammarVisitor) =
             rules.entries.associate { (ruleName, rule) ->
@@ -90,7 +126,7 @@ class XmlGenerator(
     private fun joinThroughLength(
             elements: List<ElementRenderResult>,
             groupingBracketsNeed: Boolean
-    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength + elements.size }) {
+    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength + elements.size }) { rule ->
         var bufferSize = 0
 
         if (groupingBracketsNeed && elements.size > 1)
@@ -99,14 +135,17 @@ class XmlGenerator(
         elements.forEachIndexed { index, (elementTextLength, _, buildElement) ->
             if (index != 0) {
                 bufferSize += elementTextLength
-                if (bufferSize > LENGTH_FOR_RULE_SPLIT) {
+                if (bufferSize > LENGTH_FOR_RULE_SPLIT && !rulesWithCustomNewLines.contains(rule.name)) {
                     element("crlf")
                     bufferSize = 0
-                    addWhitespace()
+                    addWhitespace(3)
+                } else if (rulesWithCustomNewLines.contains(rule.name) && rulesWithCustomNewLines[rule.name]!!.contains(index)) {
+                    element("crlf")
+                    addWhitespace(3)
                 }
                 addWhitespace()
             }
-            buildElement()
+            buildElement(rule)
         }
 
         if (groupingBracketsNeed && elements.size > 1)
@@ -116,7 +155,7 @@ class XmlGenerator(
     private fun groupUsingPipe(
             elements: List<ElementRenderResult>,
             groupingBracketsNeed: Boolean
-    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength } + elements.size * 3) {
+    ) = ElementRenderResult(elements.sumBy { (elementTextLength, _) -> elementTextLength } + elements.size * 3) { rule ->
         if (groupingBracketsNeed && elements.size > 1)
             element("symbol") { cdata("(") }
 
@@ -129,7 +168,7 @@ class XmlGenerator(
                 element("symbol") { cdata("|") }
                 addWhitespace()
             }
-            buildElement()
+            buildElement(rule)
         }
 
         if (groupingBracketsNeed && elements.size > 1)
@@ -148,20 +187,21 @@ class XmlGenerator(
     private fun runInContextBySectionInfo(
             rootContext: XWriter,
             currentContext: XWriter,
+            rule: Rule,
             sectionName: String?,
-            builder: XWriter.() -> Unit
+            builder: XWriter.(Rule) -> Unit
     ) {
         if (sectionName != null) {
             rootContext.element("set") {
                 attribute("file-name", "sectionName")
                 addDoc(sectionName)
-                builder()
+                builder(rule)
             }
-        } else builder(currentContext)
+        } else builder(currentContext, rule)
     }
 
     private fun XWriter.addDoc(docName: String) {
-        val sectionDocFile = File("$DOCS_FOLDER/$docName.txt")
+        val sectionDocFile = File("$DOCS_FOLDER/$docName.md")
 
         if (sectionDocFile.exists()) {
             element("doc") {
@@ -187,7 +227,7 @@ class XmlGenerator(
             if (sectionName != null && sectionName != currentSectionName)
                 currentSectionName = sectionName
 
-            runInContextBySectionInfo(this, currentContext, sectionName) {
+            runInContextBySectionInfo(this, currentContext, rule, sectionName) {
                 if (this != currentContext)
                     currentContext = this
 
@@ -199,7 +239,7 @@ class XmlGenerator(
                                 text("helper")
                             }
                         }
-                        buildElement()
+                        buildElement(rule)
                     }
                 }
             }
@@ -220,10 +260,10 @@ class XmlGenerator(
         val (greedyMarkerLength, _, addGreedyMarker) = addGreedyMarker(isGreedy)
         val (childContentLength, _, buildChild) = child
 
-        return ElementRenderResult(childContentLength + 1 + greedyMarkerLength) {
-            buildChild()
+        return ElementRenderResult(childContentLength + 1 + greedyMarkerLength) { rule ->
+            buildChild(rule)
             element("symbol") { cdata("?") }
-            addGreedyMarker()
+            addGreedyMarker(rule)
         }
     }
 
@@ -231,10 +271,10 @@ class XmlGenerator(
         val (greedyMarkerLength, _, addGreedyMarker) = addGreedyMarker(isGreedy)
         val (childContentLength, _, buildChild) = child
 
-        return ElementRenderResult(childContentLength + 1 + greedyMarkerLength) {
-            buildChild()
+        return ElementRenderResult(childContentLength + 1 + greedyMarkerLength) { rule ->
+            buildChild(rule)
             element("symbol") { cdata("+") }
-            addGreedyMarker()
+            addGreedyMarker(rule)
         }
     }
 
@@ -242,19 +282,19 @@ class XmlGenerator(
         val (greedyMarkerLength, _, addGreedyMarker) = addGreedyMarker(isGreedy)
         val (childContentLength, _, buildChild) = child
 
-        return ElementRenderResult(childContentLength + 1 + greedyMarkerLength) {
-            buildChild()
+        return ElementRenderResult(childContentLength + 1 + greedyMarkerLength) { rule ->
+            buildChild(rule)
             element("symbol") { cdata("*") }
-            addGreedyMarker()
+            addGreedyMarker(rule)
         }
     }
 
     override fun not(child: ElementRenderResult): ElementRenderResult {
         val (childContentLength, _, buildChild) = child
 
-        return ElementRenderResult(childContentLength + 1) {
+        return ElementRenderResult(childContentLength + 1) { rule ->
             element("symbol") { cdata("~") }
-            buildChild()
+            buildChild(rule)
         }
     }
 
@@ -262,14 +302,17 @@ class XmlGenerator(
         val (childLeftContentLength, _, buildChildLeft) = childLeft
         val (childRightContentLength, _, buildChildRight) = childRight
 
-        return ElementRenderResult(childLeftContentLength + childRightContentLength + 2) {
-            buildChildLeft()
+        return ElementRenderResult(childLeftContentLength + childRightContentLength + 2) { rule ->
+            buildChildLeft(rule)
             element("string") { cdata("..") }
-            buildChildRight()
+            buildChildRight(rule)
         }
     }
 
-    override fun rule(children: List<ElementRenderResult>, ruleName: String, lineNumber: Int) = ElementRenderResult(children.sumBy { it.contentLength }, getSectionDeclaration(lineNumber)) {
+    override fun rule(
+            children: List<ElementRenderResult>,
+            ruleName: String, lineNumber: Int
+    ) = ElementRenderResult(children.sumBy { it.contentLength }, getSectionDeclaration(lineNumber)) { rule ->
         currentRule = ruleName
 
         if (rootNodes.contains(ruleName)) {
@@ -286,7 +329,7 @@ class XmlGenerator(
             element("symbol") { cdata(":") }
             addWhitespace()
             children.forEach {
-                (_, _, buildElement) -> buildElement()
+                (_, _, buildElement) -> buildElement(rule)
             }
             element("crlf")
             addWhitespace(2)
@@ -326,7 +369,9 @@ class XmlGenerator(
                     usagesMap[node.text]?.second?.add(currentRule!!)
                 }
 
-                if (lexerRules.contains(nodeText) && lexerRule == null) {
+                if (customTerminalRenders.contains(nodeText)) {
+                    customTerminalRenders[nodeText]!!()
+                } else if (lexerRules.contains(nodeText) && lexerRule == null) {
                     element("identifier") { attribute("name", nodeText) }
                 } else {
                     element("string") { cdata(nodeText) }
@@ -345,8 +390,8 @@ class XmlGenerator(
 
     override fun XWriter.generateNotationDescription() {
         element("set") {
-            attribute("file-name", "notation")
-            addDoc("notation")
+            attribute("file-name", "description")
+            addDoc("description")
         }
     }
 

@@ -200,10 +200,6 @@ DoubleLiteral
     | DecDigits DoubleExponent
     ;
 
-LongLiteral
-    : (IntegerLiteral | HexLiteral | BinLiteral) 'L'
-    ;
-
 IntegerLiteral
     : DecDigitNoZero DecDigitOrSeparator* DecDigit
     | DecDigit
@@ -223,6 +219,18 @@ fragment BinDigitOrSeparator: BinDigit | '_';
 BinLiteral
     : '0' [bB] BinDigit BinDigitOrSeparator* BinDigit
     | '0' [bB] BinDigit
+    ;
+
+fragment IntegerOrHexOrBinLiteral
+    : (IntegerLiteral | HexLiteral | BinLiteral)
+    ;
+
+UnsignedLiteral
+    : IntegerOrHexOrBinLiteral [uU] 'L'?
+    ;
+
+LongLiteral
+    : IntegerOrHexOrBinLiteral 'L'
     ;
 
 BooleanLiteral: 'true'| 'false';

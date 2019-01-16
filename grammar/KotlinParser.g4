@@ -526,6 +526,7 @@ literalConstant
     | RealLiteral
     | NullLiteral
     | LongLiteral
+    | UnsignedLiteral
     ;
 
 stringLiteral
