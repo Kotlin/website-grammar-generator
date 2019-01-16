@@ -24,6 +24,8 @@ object Runner {
     private const val KOTLIN_SPEC_REPO = "JetBrains/kotlin-spec"
     private const val KOTLIN_SPEC_BRANCH = "spec-rework"
     private const val KOTLIN_SPEC_LEXER_GRAMMAR_PATH = "src/grammar/KotlinLexer.g4"
+    private const val KOTLIN_SPEC_UNICODE_CLASSES_FILENAME = "UnicodeClasses.g4"
+    private const val KOTLIN_SPEC_UNICODE_CLASSES_PATH = "src/grammar/$KOTLIN_SPEC_UNICODE_CLASSES_FILENAME"
     private const val KOTLIN_SPEC_PARSER_GRAMMAR_PATH = "src/grammar/KotlinParser.g4"
 
     private fun getInstanceGenerator(convertType: ConvertType, lexerRules: Map<String, Rule>, parserRules: Map<String, Rule>) =
@@ -46,6 +48,8 @@ object Runner {
         lexerGrammarText = getRepoFileContent(repo, KOTLIN_SPEC_LEXER_GRAMMAR_PATH)
         parserGrammarText = getRepoFileContent(repo, KOTLIN_SPEC_PARSER_GRAMMAR_PATH)
 
+        File(KOTLIN_SPEC_UNICODE_CLASSES_FILENAME).writeText(getRepoFileContent(repo, KOTLIN_SPEC_UNICODE_CLASSES_PATH))
+
         return Pair(LexerGrammar(lexerGrammarText), Grammar(parserGrammarText))
     }
 
@@ -60,5 +64,6 @@ object Runner {
         }
 
         File(outputFile).writeText(result)
+        File(KOTLIN_SPEC_UNICODE_CLASSES_FILENAME).delete()
     }
 }
