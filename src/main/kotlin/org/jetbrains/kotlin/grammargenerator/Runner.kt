@@ -1,5 +1,6 @@
 package org.jetbrains.kotlin.grammargenerator
 
+import org.antlr.v4.Tool
 import org.antlr.v4.tool.Grammar
 import org.antlr.v4.tool.LexerGrammar
 import org.antlr.v4.tool.Rule
@@ -13,9 +14,12 @@ enum class ConvertType { TEXT, XML }
 object Runner {
     private lateinit var lexerGrammarText: String
     private lateinit var parserGrammarText: String
+    private lateinit var unicodeClassesGrammarText: String
 
     private const val KOTLIN_SPEC_LEXER_GRAMMAR_FILENAME = "KotlinLexer.g4"
     private const val KOTLIN_SPEC_PARSER_GRAMMAR_FILENAME = "KotlinParser.g4"
+    private const val KOTLIN_SPEC_UNICODE_CLASSES_FILENAME = "UnicodeClasses.g4"
+    private const val GRAMMAR_DIR = "./grammar"
 
     private fun getInstanceGenerator(convertType: ConvertType, lexerRules: Map<String, Rule>, parserRules: Map<String, Rule>) =
             when (convertType) {
@@ -24,10 +28,18 @@ object Runner {
             } as Generator<Any, Any>
 
     private fun getGrammarSetFromGrammarFiles(grammarFilesPath: String): Pair<LexerGrammar, Grammar> {
-        lexerGrammarText = File("$grammarFilesPath$KOTLIN_SPEC_LEXER_GRAMMAR_FILENAME").readText()
-        parserGrammarText = File("$grammarFilesPath$KOTLIN_SPEC_PARSER_GRAMMAR_FILENAME").readText()
+        lexerGrammarText = File("$grammarFilesPath/$KOTLIN_SPEC_LEXER_GRAMMAR_FILENAME").readText()
+        parserGrammarText = File("$grammarFilesPath/$KOTLIN_SPEC_PARSER_GRAMMAR_FILENAME").readText()
+        unicodeClassesGrammarText = File("$grammarFilesPath/$KOTLIN_SPEC_UNICODE_CLASSES_FILENAME").readText()
 
-        return Pair(LexerGrammar(lexerGrammarText), Grammar(parserGrammarText))
+        val tool = Tool().apply { libDirectory = GRAMMAR_DIR }
+        val lexer = LexerGrammar(tool, tool.parseGrammarFromString(lexerGrammarText)).apply { fileName = KOTLIN_SPEC_LEXER_GRAMMAR_FILENAME }
+        val parser = Grammar(tool, tool.parseGrammarFromString(parserGrammarText)).apply { fileName = KOTLIN_SPEC_PARSER_GRAMMAR_FILENAME }
+
+        tool.process(lexer, false)
+        tool.process(parser, false)
+
+        return Pair(lexer, parser)
     }
 
     fun run(convertType: ConvertType, outputFile: String, grammarFilesPath: String) {
