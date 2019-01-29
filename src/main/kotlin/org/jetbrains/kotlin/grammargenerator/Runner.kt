@@ -42,7 +42,7 @@ object Runner {
         ).lines().collect(Collectors.joining(System.lineSeparator()))
     }
 
-    private fun getGrammarSet(): Pair<LexerGrammar, Grammar> {
+    private fun getGrammarSetFromRemoteRepo(): Pair<LexerGrammar, Grammar> {
         val repo = githubApi.getRepository(KOTLIN_SPEC_REPO)
 
         lexerGrammarText = getRepoFileContent(repo, KOTLIN_SPEC_LEXER_GRAMMAR_PATH)
@@ -53,8 +53,18 @@ object Runner {
         return Pair(LexerGrammar(lexerGrammarText), Grammar(parserGrammarText))
     }
 
-    fun run(convertType: ConvertType, outputFile: String) {
-        val (lexerGrammar, parserGrammar) = getGrammarSet()
+    private fun getGrammarSetFromLocalRepo(specRepoPath: String): Pair<LexerGrammar, Grammar> {
+        lexerGrammarText = File("$specRepoPath/$KOTLIN_SPEC_LEXER_GRAMMAR_PATH").readText()
+        parserGrammarText = File("$specRepoPath/$KOTLIN_SPEC_PARSER_GRAMMAR_PATH").readText()
+
+        return Pair(LexerGrammar(lexerGrammarText), Grammar(parserGrammarText))
+    }
+
+    fun run(convertType: ConvertType, outputFile: String, specRepoPath: String?) {
+        val (lexerGrammar, parserGrammar) = when (specRepoPath) {
+            null -> getGrammarSetFromRemoteRepo()
+            else -> getGrammarSetFromLocalRepo(specRepoPath)
+        }
         val generator = getInstanceGenerator(convertType, lexerGrammar.rules, parserGrammar.rules)
         val visitor = GrammarVisitor(generator)
         val result = generator.run { buffer ->
