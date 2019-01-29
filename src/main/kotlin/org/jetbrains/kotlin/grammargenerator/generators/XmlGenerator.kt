@@ -34,7 +34,7 @@ class XmlGenerator(
 ) : IXmlGenerator {
     companion object {
         const val SECTION_DECLARATION_OFFSET = 3
-        const val DOCS_FOLDER = "docs"
+        const val DOCS_FOLDER = "grammar/docs"
         private const val UNICODE_CLASSES_GRAMMAR_FILE_PATH = "https://github.com/JetBrains/kotlin-spec/blob/spec-rework/src/grammar/UnicodeClasses.g4"
 
         private val sectionPattern = Pattern.compile("""^// SECTION: (?<section>[ \w]*?)$""")

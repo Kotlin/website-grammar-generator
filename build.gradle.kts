@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.3.11"
+    application
 }
 
 group = "org.jetbrains.kotlin"
@@ -20,7 +21,6 @@ dependencies {
     compile("org.antlr:antlr4:4.7.1")
     compile("com.xenomachina:kotlin-argparser:2.0.4")
     compile("org.jonnyzzz.kotlin.xml.bind:jdom:0.2.0")
-    compile("org.kohsuke:github-api:1.92")
 }
 
 tasks.withType<KotlinCompile> {
@@ -28,4 +28,8 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xnew-inference")
     }
+}
+
+application {
+    mainClassName = "org.jetbrains.kotlin.grammargenerator.MainKt"
 }
