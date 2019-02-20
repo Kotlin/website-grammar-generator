@@ -9,7 +9,7 @@ group = "org.jetbrains.kotlin"
 version = "0.1"
 
 repositories {
-    maven { setUrl("http://dl.bintray.com/jonnyzzz/maven") }
+    maven { setUrl("https://dl.bintray.com/jonnyzzz/maven") }
     mavenCentral()
     jcenter()
 }
