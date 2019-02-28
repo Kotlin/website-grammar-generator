@@ -4,7 +4,7 @@
 
 The tool converts Kotlin grammar in ANTLR format to text file or XML file for the Kotlin website.
 
-Source grammar files are located in the [Kotlin specification repository](https://github.com/JetBrains/kotlin-spec/tree/spec-rework/src/grammar).
+Source grammar files are located in the [Kotlin specification repository](https://github.com/JetBrains/kotlin-spec/tree/master/grammar/src/main/antlr).
 
 Generated grammar is used on the Kotlin website: https://kotlinlang.org/docs/reference/grammar.html
 

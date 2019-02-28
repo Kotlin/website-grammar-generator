@@ -1,1 +1,1 @@
-## Lexical structure
+## Lexical grammar
