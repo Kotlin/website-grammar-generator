@@ -58,3 +58,5 @@ The allowed symbols for public declarations correspond to the <a href="https://w
     <span class="grammar-string">'`'</span>
     <span class="grammar-symbol">)</span>
 </div>
+
+<br />

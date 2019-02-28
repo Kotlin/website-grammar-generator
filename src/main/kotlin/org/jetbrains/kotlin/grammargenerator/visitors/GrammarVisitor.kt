@@ -56,7 +56,11 @@ class GrammarVisitor(private val generator: Generator<Any, Any>): GrammarASTVisi
     override fun visit(node: NotAST) = generator.not(node.childrenAsArray[0].visit(this))
     override fun visit(node: PredAST) = generator.pred()
     override fun visit(node: RangeAST) = generator.range(node.childrenAsArray[0].visit(this), node.childrenAsArray[1].visit(this))
-    override fun visit(node: SetAST) = generator.set(false, node.childrenAsArray.map { it.visit(this) })
+    override fun visit(node: SetAST): Any {
+        val groupingBracketsNeed = isGroupingBracketsNeedRecursive(node) && !isSingleChildOfRule(node.parent as GrammarAST)
+
+        return generator.set(groupingBracketsNeed, node.childrenAsArray.map { it.visit(this) })
+    }
     override fun visit(node: RuleRefAST) = generator.ruleRef(node)
     override fun visit(node: TerminalAST) = generator.terminal(node)
 }
