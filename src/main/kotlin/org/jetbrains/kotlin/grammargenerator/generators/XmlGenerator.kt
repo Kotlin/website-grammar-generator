@@ -39,13 +39,13 @@ class XmlGenerator(
 
         private val sectionPattern = Pattern.compile("""^// SECTION: (?<section>[ \w]*?)$""")
         private val unicodeClassesToLineInGrammarFileMap = mapOf(
-                "LL" to 12,
-                "LM" to 616,
-                "LO" to 676,
-                "LT" to 1002,
-                "LU" to 1014,
-                "ND" to 1608,
-                "NL" to 1645
+                "LL" to 9,
+                "LM" to 613,
+                "LO" to 673,
+                "LT" to 999,
+                "LU" to 1011,
+                "ND" to 1605,
+                "NL" to 1642
         )
         // ruleName -> numbers of top-level rule element, after which new line is added
         private val rulesWithCustomNewLines = mapOf(
