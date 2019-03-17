@@ -33,6 +33,10 @@ The allowed symbols in identifiers corresponding to the target and publicity of 
     <span class="grammar-symbol">)</span>
 </div>
 
+##### Kotlin/Android (for any publicity of declarations)
+
+The allowed symbols are different from allowed symbols for Kotlin/JVM and correspond to the <a href="https://source.android.com/devices/tech/dalvik/dex-format#simplename" target="_blank">Dalvik Executable format</a>.
+
 ##### Kotlin/JS (for private declarations)
 
 <div class="grammar-description">
