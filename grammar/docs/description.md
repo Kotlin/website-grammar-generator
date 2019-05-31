@@ -16,10 +16,10 @@ Short description:
 
 ### Grammar source files
 
-Kotlin grammar source files (in ANTLR format) are located in the [Kotlin specification repository](https://github.com/JetBrains/kotlin-spec){:target="_blank"}:
-- **[KotlinLexer.g4](https://github.com/JetBrains/kotlin-spec/tree/master/grammar/src/main/antlr/KotlinLexer.g4){:target="_blank"}** describes [lexical structure](#lexical-grammar);
-- **[UnicodeClasses.g4](https://github.com/JetBrains/kotlin-spec/tree/master/grammar/src/main/antlr/UnicodeClasses.g4){:target="_blank"}** describes the characters that can be used in identifiers (these rules are omitted on this page for better readability);
-- **[KotlinParser.g4](https://github.com/JetBrains/kotlin-spec/tree/master/grammar/src/main/antlr/KotlinParser.g4){:target="_blank"}** describes [syntax](#syntax-grammar).
+Kotlin grammar source files (in ANTLR format) are located in the [Kotlin specification repository](https://github.com/Kotlin/kotlin-spec){:target="_blank"}:
+- **[KotlinLexer.g4](https://github.com/Kotlin/kotlin-spec/tree/master/grammar/src/main/antlr/KotlinLexer.g4){:target="_blank"}** describes [lexical structure](#lexical-grammar);
+- **[UnicodeClasses.g4](https://github.com/Kotlin/kotlin-spec/tree/master/grammar/src/main/antlr/UnicodeClasses.g4){:target="_blank"}** describes the characters that can be used in identifiers (these rules are omitted on this page for better readability);
+- **[KotlinParser.g4](https://github.com/Kotlin/kotlin-spec/tree/master/grammar/src/main/antlr/KotlinParser.g4){:target="_blank"}** describes [syntax](#syntax-grammar).
 
 The grammar on this page corresponds to the grammar files above.
 
