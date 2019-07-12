@@ -15,4 +15,5 @@
 | | Equality | `==`, `!==` |
 | | Conjunction | `&&` |
 | | Disjunction | `||` |
+| | Spread operator | `*` |
 | Lowest | Assignment | `=`, `+=`, `-=`, `*=`, `/=`, `%=` |
