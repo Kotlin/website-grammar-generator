@@ -12,7 +12,7 @@
 | | Elvis | `?:` |
 | | Named checks | `in`, `!in`, `is`, `!is` |
 | | Comparison | `<`, `>`, `<=`, `>=` |
-| | Equality | `==`, `!==` |
+| | Equality | `==`, `!=`, `===`, `!==` |
 | | Conjunction | `&&` |
 | | Disjunction | `||` |
 | | Spread operator | `*` |
