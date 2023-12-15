@@ -1,5 +1,8 @@
 # Kotlin website grammar generator
 
+[![JetBrains team project](https://jb.gg/badges/team.svg)](https://github.com/JetBrains#jetbrains-on-github)
+[![GitHub license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](https://www.apache.org/licenses/LICENSE-2.0)
+
 ## Description
 
 The tool converts Kotlin grammar in ANTLR format to text file or XML file for the Kotlin website.
