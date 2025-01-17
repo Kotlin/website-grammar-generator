@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.11"
+    kotlin("jvm") version "1.7.0"
     application
 }
 
@@ -10,23 +10,19 @@ version = "0.1"
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 
 dependencies {
-    compile(kotlin("stdlib-jdk8"))
-    compile("org.antlr:antlr4-runtime:4.7.1")
-    compile("org.antlr:ST4:4.0.8")
-    compile("org.antlr:antlr4:4.7.1")
-    compile("com.xenomachina:kotlin-argparser:2.0.4")
-    compile("org.jonnyzzz.kotlin.xml.bind:jdom:0.2.0")
+    implementation(kotlin("stdlib-jdk8"))
+    implementation("org.antlr:antlr4-runtime:4.7.1")
+    implementation("org.antlr:ST4:4.0.8")
+    implementation("org.antlr:antlr4:4.7.1")
+    implementation("com.xenomachina:kotlin-argparser:2.0.7")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
 }
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xnew-inference")
-    }
 }
 
 application {

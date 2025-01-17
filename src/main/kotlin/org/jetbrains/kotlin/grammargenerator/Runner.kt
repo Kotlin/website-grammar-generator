@@ -19,7 +19,6 @@ object Runner {
     private const val KOTLIN_SPEC_LEXER_GRAMMAR_FILENAME = "KotlinLexer.g4"
     private const val KOTLIN_SPEC_PARSER_GRAMMAR_FILENAME = "KotlinParser.g4"
     private const val KOTLIN_SPEC_UNICODE_CLASSES_FILENAME = "UnicodeClasses.g4"
-    private const val GRAMMAR_DIR = "./grammar"
 
     private fun getInstanceGenerator(convertType: ConvertType, lexerRules: Map<String, Rule>, parserRules: Map<String, Rule>) =
             when (convertType) {
@@ -32,7 +31,7 @@ object Runner {
         parserGrammarText = File("$grammarFilesPath/$KOTLIN_SPEC_PARSER_GRAMMAR_FILENAME").readText()
         unicodeClassesGrammarText = File("$grammarFilesPath/$KOTLIN_SPEC_UNICODE_CLASSES_FILENAME").readText()
 
-        val tool = Tool().apply { libDirectory = GRAMMAR_DIR }
+        val tool = Tool().apply { libDirectory = grammarFilesPath }
         val lexer = LexerGrammar(tool, tool.parseGrammarFromString(lexerGrammarText)).apply { fileName = KOTLIN_SPEC_LEXER_GRAMMAR_FILENAME }
         val parser = Grammar(tool, tool.parseGrammarFromString(parserGrammarText)).apply { fileName = KOTLIN_SPEC_PARSER_GRAMMAR_FILENAME }
 

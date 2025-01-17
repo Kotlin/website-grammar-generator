@@ -6,7 +6,6 @@ import org.antlr.v4.tool.ast.GrammarAST
 import org.antlr.v4.tool.ast.RuleRefAST
 import org.antlr.v4.tool.ast.TerminalAST
 import org.jetbrains.kotlin.grammargenerator.visitors.GrammarVisitor
-import org.jonnyzzz.kotlin.xml.dsl.XWriter
 
 interface Generator<T, K> {
     val usedLexerRules: MutableSet<String>
