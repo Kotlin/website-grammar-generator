@@ -2,7 +2,7 @@
 
 | Precedence | Title | Symbols |
 |------------|-------|---------|
-| Highest    | Postfix | `++`, `--`, `.`, `?.`, `?` |
+| Highest    | Postfix | `++`, `--`, `.`, `?.`, `?`, `[]`, `()` |
 | | Prefix | `-`, `+`, `++`, `--`, `!`, [`label`](#label) |
 | | Type RHS | `:`, `as`, `as?` |
 | | Multiplicative | `*`, `/`, `%` |
