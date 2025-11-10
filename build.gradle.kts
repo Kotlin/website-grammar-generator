@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.7.0"
+    kotlin("jvm") version "1.9.25"
     application
 }
 
@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
+    implementation(kotlin("stdlib"))
     implementation("org.antlr:antlr4-runtime:4.7.1")
     implementation("org.antlr:ST4:4.0.8")
     implementation("org.antlr:antlr4:4.7.1")
@@ -22,9 +22,9 @@ dependencies {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "21"
 }
 
 application {
-    mainClassName = "org.jetbrains.kotlin.grammargenerator.MainKt"
+    mainClass.set("org.jetbrains.kotlin.grammargenerator.MainKt")
 }
